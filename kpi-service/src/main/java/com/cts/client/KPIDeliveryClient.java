@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@FeignClient(name = "delivery-service")
+@FeignClient(name = "delivery-service", fallback = KPIDeliveryClientFallback.class)
 public interface KPIDeliveryClient {
+
     @GetMapping("/api/deliveries/stats/completion")
     JsonNode getCompletionStats();
 }

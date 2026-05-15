@@ -1,6 +1,7 @@
 package com.cts.controller;
 
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,12 +35,12 @@ public class KPIController {
         KPIDTO kpi = kpiService.getKPIById(id);
         return ResponseEntity.ok(ApiResponse.success("KPI metric found", kpi));
     }
-    
-    @PostMapping 
+
+    @PostMapping
     public ResponseEntity<ApiResponse<KPIDTO>> createKPI(@RequestBody KPIDTO kpiDto) {
         KPIDTO createdKpi = kpiService.createKPI(kpiDto);
         return new ResponseEntity<>(
-            ApiResponse.success("New KPI metric established", createdKpi), 
+            ApiResponse.success("New KPI metric established", createdKpi),
             HttpStatus.CREATED
         );
     }
@@ -49,4 +50,11 @@ public class KPIController {
         KPIDTO updatedKpi = kpiService.updateKPI(id, kpiDto);
         return ResponseEntity.ok(ApiResponse.success("KPI metric updated successfully", updatedKpi));
     }
-} 
+
+    @PostMapping("/sync")
+    public ResponseEntity<ApiResponse<String>> syncKpis() {
+        kpiService.syncRemoteKpis();
+        return ResponseEntity.ok(ApiResponse.success(
+            "KPI sync complete — request fulfillment, delivery completion, and stock utilization updated", "OK"));
+    }
+}
