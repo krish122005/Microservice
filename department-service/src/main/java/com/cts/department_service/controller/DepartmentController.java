@@ -2,6 +2,8 @@ package com.cts.department_service.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.cts.department_service.dto.DepartmentRequestDto;
@@ -18,22 +20,47 @@ public class DepartmentController {
         this.service = service;
     }
 
-    // CREATE DEPARTMENT
+    // CREATE DEPARTMENT — ADMIN only
     @PostMapping
-    public String createDepartment(@RequestBody DepartmentRequestDto dto) {
-        service.createDepartment(dto);
-        return "Department created successfully";
+    public ResponseEntity<?> createDepartment(
+            @RequestBody DepartmentRequestDto dto,
+            @RequestHeader("X-Auth-Role") String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only ADMIN can create departments.");
+        }
+
+        DepartmentResponseDto created = service.createDepartment(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // GET ALL
+    // UPDATE DEPARTMENT — ADMIN only
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateDepartment(
+            @PathVariable Integer id,
+            @RequestBody DepartmentRequestDto dto,
+            @RequestHeader("X-Auth-Role") String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only ADMIN can update departments.");
+        }
+
+        DepartmentResponseDto updated = service.updateDepartment(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+
+    // GET ALL — ALL roles
     @GetMapping
-    public List<DepartmentResponseDto> getAllDepartments() {
-        return service.getAllDepartments();
+    public ResponseEntity<List<DepartmentResponseDto>> getAllDepartments() {
+        return ResponseEntity.ok(service.getAllDepartments());
     }
 
-    // GET BY ID
+    // GET BY ID — ALL roles
     @GetMapping("/{id}")
-    public DepartmentResponseDto getDepartment(@PathVariable Integer id) {
-        return service.getDepartmentById(id);
+    public ResponseEntity<DepartmentResponseDto> getDepartment(
+            @PathVariable Integer id) {
+        return ResponseEntity.ok(service.getDepartmentById(id));
     }
 }

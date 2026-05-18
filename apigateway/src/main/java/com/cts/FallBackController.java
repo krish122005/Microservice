@@ -70,4 +70,13 @@ public class FallBackController {
                         "service", "delivery-service"
                 ));
     }
+    @RequestMapping("/department")
+    public ResponseEntity<Map<String, String>> departmentFallback() {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of(
+                        "error", "SERVICE_UNAVAILABLE",
+                        "message", "Department Service is currently unavailable.",
+                        "service", "department-service"
+                ));
+    }
 }

@@ -1,21 +1,14 @@
 package com.cts.delivery_service.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DeliveryCreateDto {
 
     private Integer requestId;
     private Integer quantity;
-    
-	public Integer getRequestId() {
-		return requestId;
-	}
-	public void setRequestId(Integer requestId) {
-		this.requestId = requestId;
-	}
-	public Integer getQuantity() {
-		return quantity;
-	}
-	public void setQuantity(Integer quantity) {
-		this.quantity = quantity;
-	}
-
 }

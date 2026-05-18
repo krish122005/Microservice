@@ -34,12 +34,6 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         String authHeader = exchange.getRequest()
                             .getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
-        // ─────────────────────────────────────────
-        // PUBLIC PATHS — skip JWT check entirely
-        // /api/auth/  → login, register
-        // /internal/  → service-to-service calls
-        // /fallback/  → circuit breaker fallbacks
-        // ─────────────────────────────────────────
         if (path.startsWith("/api/auth/")
                 || path.startsWith("/internal/")
                 || path.startsWith("/fallback/")) {
@@ -47,17 +41,11 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // ─────────────────────────────────────────
-        // NO TOKEN — reject immediately
-        // ─────────────────────────────────────────
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             System.out.println("[GATEWAY] No token for path: " + path);
             return sendUnauthorized(exchange);
         }
 
-        // ─────────────────────────────────────────
-        // VALIDATE TOKEN and extract claims
-        // ─────────────────────────────────────────
         try {
             String token = authHeader.substring(7);
             Claims claims = jwtUtil.validateAndExtract(token);
@@ -68,18 +56,21 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             }
 
             // Extract user info from token claims
-            String username = claims.getSubject();
-            String role     = claims.get("role", String.class);
+            String username  = claims.getSubject();
+            String role      = claims.get("role", String.class);
+            Object userIdObj = claims.get("userId");
+            String userId    = userIdObj != null ? userIdObj.toString() : "";
 
-            // DEBUG — print what is being injected
             System.out.println("[GATEWAY] Path: " + path);
             System.out.println("[GATEWAY] X-Auth-User: " + username);
             System.out.println("[GATEWAY] X-Auth-Role: " + role);
+            System.out.println("[GATEWAY] X-Auth-UserId: " + userId);
 
             // Inject user info into downstream request headers
             ServerHttpRequest mutated = exchange.getRequest().mutate()
                     .header("X-Auth-User", username)
                     .header("X-Auth-Role", role)
+                    .header("X-Auth-UserId", userId)
                     .build();
 
             return chain.filter(exchange.mutate().request(mutated).build());

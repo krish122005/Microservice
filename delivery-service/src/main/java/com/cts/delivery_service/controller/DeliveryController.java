@@ -2,6 +2,8 @@ package com.cts.delivery_service.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.cts.delivery_service.dto.DeliveryCreateDto;
@@ -18,31 +20,64 @@ public class DeliveryController {
         this.service = service;
     }
 
-    // CREATE DELIVERY
+    // CREATE DELIVERY — WAREHOUSE only
     @PostMapping
-    public String createDelivery(@RequestBody DeliveryCreateDto dto) {
-        service.createDelivery(dto);
-        return "Delivery record created";
+    public ResponseEntity<?> createDelivery(
+            @RequestBody DeliveryCreateDto dto,
+            @RequestHeader("X-Auth-Role") String role,
+            @RequestHeader("X-Auth-User") String deliveredBy) {
+
+        if (!"WAREHOUSE".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only WAREHOUSE can create deliveries.");
+        }
+
+        DeliveryResponseDto created = service.createDelivery(dto, deliveredBy);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // LIST DELIVERIES
+    // LIST DELIVERIES — ADMIN, WAREHOUSE, AUDITOR
     @GetMapping
-    public List<DeliveryResponseDto> listDeliveries(
-            @RequestParam(required = false) Integer requestId) {
+    public ResponseEntity<?> listDeliveries(
+            @RequestParam(required = false) Integer requestId,
+            @RequestHeader("X-Auth-Role") String role) {
 
-        return service.listDeliveries(requestId);
+        if (!"ADMIN".equals(role) && !"WAREHOUSE".equals(role)
+                && !"AUDITOR".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied.");
+        }
+
+        return ResponseEntity.ok(service.listDeliveries(requestId));
     }
 
-    // CLOSE DELIVERY
+    // CLOSE DELIVERY — WAREHOUSE only
     @PutMapping("/{deliveryId}/close")
-    public String closeRequest(@PathVariable Integer deliveryId) {
-        service.closeRequest(deliveryId);
-        return "Request closed successfully";
+    public ResponseEntity<?> closeRequest(
+            @PathVariable Integer deliveryId,
+            @RequestHeader("X-Auth-Role") String role) {
+
+        if (!"WAREHOUSE".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only WAREHOUSE can close deliveries.");
+        }
+
+        DeliveryResponseDto closed = service.closeRequest(deliveryId);
+        return ResponseEntity.ok(closed);
     }
-    
- // ADD THIS — needed by Feign client in report-audit-service
+
+    // GET BY ID — ADMIN, WAREHOUSE, AUDITOR, DEPARTMENT_HEAD
     @GetMapping("/{deliveryId}")
-    public DeliveryResponseDto getDeliveryById(@PathVariable Integer deliveryId) {
-        return service.getDeliveryById(deliveryId);
+    public ResponseEntity<?> getDeliveryById(
+            @PathVariable Integer deliveryId,
+            @RequestHeader("X-Auth-Role") String role) {
+
+        if (!"ADMIN".equals(role) && !"WAREHOUSE".equals(role)
+                && !"AUDITOR".equals(role) && !"DEPARTMENT_HEAD".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied.");
+        }
+
+        return ResponseEntity.ok(service.getDeliveryById(deliveryId));
     }
 }

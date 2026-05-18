@@ -1,7 +1,13 @@
 package com.cts.delivery_service.dto;
 
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DeliveryResponseDto {
 
     private Integer deliveryId;
@@ -10,42 +16,4 @@ public class DeliveryResponseDto {
     private LocalDateTime deliveredAt;
     private Integer quantity;
     private String status;
-    
-	public Integer getDeliveryId() {
-		return deliveryId;
-	}
-	public void setDeliveryId(Integer deliveryId) {
-		this.deliveryId = deliveryId;
-	}
-	public Integer getRequestId() {
-		return requestId;
-	}
-	public void setRequestId(Integer requestId) {
-		this.requestId = requestId;
-	}
-	public String getDeliveredBy() {
-		return deliveredBy;
-	}
-	public void setDeliveredBy(String deliveredBy) {
-		this.deliveredBy = deliveredBy;
-	}
-	public LocalDateTime getDeliveredAt() {
-		return deliveredAt;
-	}
-	public void setDeliveredAt(LocalDateTime deliveredAt) {
-		this.deliveredAt = deliveredAt;
-	}
-	public Integer getQuantity() {
-		return quantity;
-	}
-	public void setQuantity(Integer quantity) {
-		this.quantity = quantity;
-	}
-	public String getStatus() {
-		return status;
-	}
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
 }

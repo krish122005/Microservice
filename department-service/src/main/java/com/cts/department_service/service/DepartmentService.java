@@ -20,15 +20,21 @@ public class DepartmentService {
     }
 
     // CREATE
-    public void createDepartment(DepartmentRequestDto dto) {
+    public DepartmentResponseDto createDepartment(DepartmentRequestDto dto) {
 
-        // ✅ OLD VALIDATION — preserved
         if (dto.getName() == null || dto.getName().trim().isEmpty()) {
             throw new InvalidRequestException("Department name is required");
         }
 
         if (repository.existsByNameIgnoreCase(dto.getName().trim())) {
             throw new InvalidRequestException("Department already exists");
+        }
+
+        // VALIDATE headId is not already assigned to another department
+        if (dto.getHeadId() != null && repository.existsByHeadId(dto.getHeadId())) {
+            throw new InvalidRequestException(
+                    "HeadId " + dto.getHeadId() +
+                    " is already assigned to another department");
         }
 
         Department department = Department.builder()
@@ -38,7 +44,32 @@ public class DepartmentService {
                 .status(dto.getStatus() != null ? dto.getStatus() : "ACTIVE")
                 .build();
 
-        repository.save(department);
+        Department saved = repository.save(department);
+        return mapToResponse(saved);
+    }
+
+    // UPDATE DEPARTMENT
+    public DepartmentResponseDto updateDepartment(Integer id, DepartmentRequestDto dto) {
+
+        Department department = repository.findById(id)
+                .orElseThrow(() ->
+                        new InvalidRequestException("Department not found"));
+
+        // VALIDATE new headId is not assigned to another department
+        if (dto.getHeadId() != null &&
+                repository.existsByHeadIdAndDepartmentIdNot(dto.getHeadId(), id)) {
+            throw new InvalidRequestException(
+                    "HeadId " + dto.getHeadId() +
+                    " is already assigned to another department");
+        }
+
+        department.setName(dto.getName() != null ? dto.getName() : department.getName());
+        department.setHeadId(dto.getHeadId() != null ? dto.getHeadId() : department.getHeadId());
+        department.setContactInfo(dto.getContactInfo() != null ? dto.getContactInfo() : department.getContactInfo());
+        department.setStatus(dto.getStatus() != null ? dto.getStatus() : department.getStatus());
+
+        Department saved = repository.save(department);
+        return mapToResponse(saved);
     }
 
     // GET BY ID
@@ -61,12 +92,12 @@ public class DepartmentService {
 
     // MAPPER
     private DepartmentResponseDto mapToResponse(Department dept) {
-        DepartmentResponseDto dto = new DepartmentResponseDto();
-        dto.setDepartmentId(dept.getDepartmentId());
-        dto.setName(dept.getName());
-        dto.setHeadId(dept.getHeadId());
-        dto.setContactInfo(dept.getContactInfo());
-        dto.setStatus(dept.getStatus());
-        return dto;
+        return new DepartmentResponseDto(
+                dept.getDepartmentId(),
+                dept.getName(),
+                dept.getHeadId(),
+                dept.getContactInfo(),
+                dept.getStatus()
+        );
     }
 }
