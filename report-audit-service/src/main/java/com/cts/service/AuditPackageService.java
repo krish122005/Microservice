@@ -33,60 +33,68 @@ public class AuditPackageService {
     public AuditPackageService(AuditRepository auditRepository,
                                 AuditPackageMapper auditPackageMapper,
                                 @Lazy ReportService reportService) {
-        this.auditRepository = auditRepository;
+        this.auditRepository    = auditRepository;
         this.auditPackageMapper = auditPackageMapper;
-        this.reportService = reportService;
+        this.reportService      = reportService;
     }
 
-    // ─────────────────────────────────────────────
-    // GENERATE — scope + generatedBy driven
-    // POST /api/audit-packages/generate
-    //      ?start=2026-01-01T00:00:00
-    //      &end=2026-03-31T23:59:59
-    //      &scope=ALL              (default ALL)
-    //      &generatedBy=auditor.smith  (default SYSTEM)
-    // ─────────────────────────────────────────────
+
     public AuditPackageDTO generatePackage(LocalDateTime start, LocalDateTime end,
                                             String scope, String generatedBy) {
+        String resolvedScope = (scope == null || scope.isBlank()) ? "ALL" : scope.toUpperCase();
         String contentsJSON;
 
-        switch (scope.toUpperCase()) {
-
+        switch (resolvedScope) {
             case "REQUESTS" -> {
-                String requestsMetrics = fetchScope("REQUESTS", generatedBy);
+                String metrics = fetchScope("REQUESTS", generatedBy);
                 contentsJSON = String.format(
                     "{ \"period\": \"%s to %s\", \"scope\": \"REQUESTS\", " +
                     "\"generatedBy\": \"%s\", \"requests\": %s }",
-                    start, end, generatedBy, requestsMetrics
-                );
+                    start, end, generatedBy, metrics);
             }
-
             case "DELIVERIES", "DELIVERY" -> {
-                String deliveriesMetrics = fetchScope("DELIVERIES", generatedBy);
+                String metrics = fetchScope("DELIVERIES", generatedBy);
                 contentsJSON = String.format(
                     "{ \"period\": \"%s to %s\", \"scope\": \"DELIVERIES\", " +
                     "\"generatedBy\": \"%s\", \"deliveries\": %s }",
-                    start, end, generatedBy, deliveriesMetrics
-                );
+                    start, end, generatedBy, metrics);
             }
-
+            case "BILLING" -> {
+                String metrics = fetchScope("BILLING", generatedBy);
+                contentsJSON = String.format(
+                    "{ \"period\": \"%s to %s\", \"scope\": \"BILLING\", " +
+                    "\"generatedBy\": \"%s\", \"billing\": %s }",
+                    start, end, generatedBy, metrics);
+            }
+            case "INVENTORY" -> {
+                String metrics = fetchScope("INVENTORY", generatedBy);
+                contentsJSON = String.format(
+                    "{ \"period\": \"%s to %s\", \"scope\": \"INVENTORY\", " +
+                    "\"generatedBy\": \"%s\", \"inventory\": %s }",
+                    start, end, generatedBy, metrics);
+            }
             case "ALL" -> {
-                String requestsMetrics   = fetchScope("REQUESTS", generatedBy);
+                String requestsMetrics   = fetchScope("REQUESTS",   generatedBy);
                 String deliveriesMetrics = fetchScope("DELIVERIES", generatedBy);
+                String billingMetrics    = fetchScope("BILLING",    generatedBy);
+                String inventoryMetrics  = fetchScope("INVENTORY",  generatedBy);
                 contentsJSON = String.format(
                     "{ \"period\": \"%s to %s\", \"scope\": \"ALL\", " +
-                    "\"generatedBy\": \"%s\", \"requests\": %s, \"deliveries\": %s }",
-                    start, end, generatedBy, requestsMetrics, deliveriesMetrics
-                );
+                    "\"generatedBy\": \"%s\", " +
+                    "\"requests\": %s, " +
+                    "\"deliveries\": %s, " +
+                    "\"billing\": %s, " +
+                    "\"inventory\": %s }",
+                    start, end, generatedBy,
+                    requestsMetrics, deliveriesMetrics, billingMetrics, inventoryMetrics);
             }
-
             default -> throw new InvalidRequestException(
-                "Invalid scope: \"" + scope + "\". Allowed values: REQUESTS, DELIVERIES, ALL"
-            );
+                "Invalid scope: \"" + scope + "\". Allowed: REQUESTS, DELIVERIES, BILLING, INVENTORY, ALL");
         }
 
-        long timestamp = System.currentTimeMillis();
-        String packageUri = "compliance/archives/package_" + scope.toLowerCase() + "_" + timestamp + ".zip";
+        long   timestamp  = System.currentTimeMillis();
+        String packageUri = "compliance/archives/package_" + resolvedScope.toLowerCase()
+                            + "_" + timestamp + ".zip";
         String checksum   = generateChecksum(contentsJSON);
 
         AuditPackageDTO dto = new AuditPackageDTO();
@@ -96,25 +104,19 @@ public class AuditPackageService {
         dto.setPackageUri(packageUri);
         dto.setChecksum(checksum);
         dto.setGeneratedAt(LocalDateTime.now());
-
         return this.createPackage(dto);
     }
 
-    // ─────────────────────────────────────────────
-    // PRIVATE — fetch one scope via ReportService
-    // ─────────────────────────────────────────────
+
     private String fetchScope(String scope, String generatedBy) {
         try {
             ReportDTO report = reportService.generateReportByScope(scope, generatedBy);
-            return report.getMetricsJSON();
+            return report != null ? report.getMetricsJSON() : "{ \"error\": \"no data\" }";
         } catch (Exception e) {
             return "{ \"error\": \"" + scope + " service unavailable: " + e.getMessage() + "\" }";
         }
     }
 
-    // ─────────────────────────────────────────────
-    // CRUD WITH RETRY
-    // ─────────────────────────────────────────────
 
     @Transactional
     @Retryable(
@@ -137,19 +139,16 @@ public class AuditPackageService {
         AuditPackage existing = auditRepository.findById(id)
                 .orElseThrow(() -> new InvalidRequestException(
                     "Audit Package not found with id: " + id));
-
         existing.setPeriodStart(dto.getPeriodStart());
         existing.setPeriodEnd(dto.getPeriodEnd());
         existing.setContentsJSON(dto.getContentsJSON());
         existing.setPackageUri(dto.getPackageUri());
         existing.setChecksum(dto.getChecksum());
-
         return auditPackageMapper.toDTO(auditRepository.save(existing));
     }
 
     public List<AuditPackageDTO> getAllPackages() {
-        return auditRepository.findAll()
-                .stream()
+        return auditRepository.findAll().stream()
                 .map(auditPackageMapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -162,8 +161,7 @@ public class AuditPackageService {
     }
 
     public List<AuditPackageDTO> getPackagesByPeriod(LocalDateTime start, LocalDateTime end) {
-        return auditRepository.findByPeriod(start, end)
-                .stream()
+        return auditRepository.findByPeriod(start, end).stream()
                 .map(auditPackageMapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -176,9 +174,6 @@ public class AuditPackageService {
         auditRepository.delete(existing);
     }
 
-    // ─────────────────────────────────────────────
-    // RECOVER
-    // ─────────────────────────────────────────────
 
     @Recover
     public AuditPackageDTO recoverCreate(Exception e, AuditPackageDTO dto) {
@@ -192,9 +187,8 @@ public class AuditPackageService {
         return null;
     }
 
-    // ─────────────────────────────────────────────
-    // PRIVATE — SHA-256 checksum for tamper evidence
-    // ─────────────────────────────────────────────
+    // ── SHA-256 checksum for tamper evidence ──────────────────────────────────
+
     private String generateChecksum(String content) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

@@ -1,8 +1,8 @@
 package com.cts.client.inventory;
 
 import java.util.List;
-import org.springframework.stereotype.Service;
 
+import org.springframework.stereotype.Service;
 
 @Service
 public class InventoryIntegrationService {
