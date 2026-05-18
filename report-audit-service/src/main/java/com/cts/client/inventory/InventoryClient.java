@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 )
 public interface InventoryClient {
 
-    @GetMapping("/api/inventory/list")
-    List<InventoryItemDTO> getStockByWarehouse(@RequestParam("warehouseId") Long warehouseId);
     @GetMapping("/api/inventory/all")
     List<InventoryItemDTO> getAllInventory();
+
+    @GetMapping("/api/inventory/list")
+    List<InventoryItemDTO> getStockByWarehouse(@RequestParam("warehouseId") Long warehouseId);
 }

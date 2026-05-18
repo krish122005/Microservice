@@ -10,4 +10,5 @@ public class InvoiceDTO {
     private Double amount;
     private String status;
     private String issuedAt;
+    private String fileUri;
 }
