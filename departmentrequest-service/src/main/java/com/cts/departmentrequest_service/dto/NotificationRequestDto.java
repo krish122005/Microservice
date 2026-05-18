@@ -1,6 +1,5 @@
 package com.cts.departmentrequest_service.dto;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,10 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DepartmentRequestCreateDto {
+public class NotificationRequestDto {
 
-    private Integer departmentId;
-    private List<Integer> productIds;
-    private Integer quantity;
+    private Long userId;
+    private Long referenceId;
+    private String message;
+    private String category;
 }
-

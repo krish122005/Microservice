@@ -1,6 +1,5 @@
 package com.cts.delivery_service.dto;
 
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,12 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeliveryResponseDto {
+public class ProofOfReceiptRequestDto {
 
     private Integer deliveryId;
-    private Integer requestId;
-    private String deliveredBy;
-    private LocalDateTime deliveredAt;
-    private Integer quantity;
+    private Integer departmentId;
+    private String fileUri;
     private String status;
 }

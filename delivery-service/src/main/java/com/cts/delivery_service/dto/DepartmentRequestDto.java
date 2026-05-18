@@ -1,6 +1,5 @@
-package com.cts.departmentrequest_service.dto;
+package com.cts.delivery_service.dto;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,10 +7,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DepartmentRequestCreateDto {
+public class DepartmentRequestDto {
 
+    private Integer requestId;
     private Integer departmentId;
-    private List<Integer> productIds;
+    private String productIdsJson;
     private Integer quantity;
+    private String status;
+    private Integer headId;
 }
-

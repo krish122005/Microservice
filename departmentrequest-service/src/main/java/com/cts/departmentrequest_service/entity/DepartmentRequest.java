@@ -29,7 +29,7 @@ public class DepartmentRequest {
     private Integer quantity;
 
     @Column(nullable = false)
-    private String status; 
+    private String status;
 
     @CreationTimestamp
     @Column(name = "requested_at", updatable = false)
@@ -37,4 +37,10 @@ public class DepartmentRequest {
 
     @Column(name = "approved_by")
     private String approvedBy;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "created_by_user_id")
+    private Long createdByUserId;
 }

@@ -2,13 +2,9 @@ package com.cts.departmentrequest_service.controller;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.cts.departmentrequest_service.dto.DepartmentRequestCreateDto;
 import com.cts.departmentrequest_service.dto.DepartmentRequestResponseDto;
@@ -24,36 +20,83 @@ public class DepartmenRequestController {
         this.service = service;
     }
 
-    // CREATE REQUEST
+    // CREATE REQUEST — DOCTOR, NURSE only
     @PostMapping
-    public String createRequest(@RequestBody DepartmentRequestCreateDto dto) {
-        service.createRequest(dto);
-        return "Department request created successfully";
+    public ResponseEntity<?> createRequest(
+            @RequestBody DepartmentRequestCreateDto dto,
+            @RequestHeader("X-Auth-Role") String role,
+            @RequestHeader("X-Auth-User") String createdBy,
+            @RequestHeader("X-Auth-UserId") String createdByUserId) {
+
+        if (!"DOCTOR".equals(role) && !"NURSE".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only DOCTOR or NURSE can create requests.");
+        }
+
+        DepartmentRequestResponseDto created = service.createRequest(
+                dto, createdBy, Long.parseLong(createdByUserId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // APPROVE REQUEST
+    // APPROVE REQUEST — ADMIN, DEPARTMENT_HEAD only
     @PutMapping("/{requestId}/approve")
-    public String approveRequest(@PathVariable Integer requestId) {
-        service.approve(requestId, "SYSTEM");
-        return "Request approved";
+    public ResponseEntity<?> approveRequest(
+            @PathVariable Integer requestId,
+            @RequestHeader("X-Auth-Role") String role,
+            @RequestHeader("X-Auth-User") String username) {
+
+        if (!"ADMIN".equals(role) && !"DEPARTMENT_HEAD".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only ADMIN or DEPARTMENT_HEAD can approve requests.");
+        }
+
+        DepartmentRequestResponseDto updated = service.approve(requestId, username);
+        return ResponseEntity.ok(updated);
     }
 
-    // REJECT REQUEST
+    // REJECT REQUEST — ADMIN, DEPARTMENT_HEAD only
     @PutMapping("/{requestId}/reject")
-    public String rejectRequest(@PathVariable Integer requestId) {
-        service.reject(requestId, "SYSTEM");
-        return "Request rejected";
+    public ResponseEntity<?> rejectRequest(
+            @PathVariable Integer requestId,
+            @RequestHeader("X-Auth-Role") String role,
+            @RequestHeader("X-Auth-User") String username) {
+
+        if (!"ADMIN".equals(role) && !"DEPARTMENT_HEAD".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only ADMIN or DEPARTMENT_HEAD can reject requests.");
+        }
+
+        DepartmentRequestResponseDto updated = service.reject(requestId, username);
+        return ResponseEntity.ok(updated);
     }
 
-    // VIEW REQUEST
+    // VIEW REQUEST — ADMIN, DEPARTMENT_HEAD, DOCTOR, NURSE
     @GetMapping("/{requestId}")
-    public DepartmentRequestResponseDto viewRequest(
-            @PathVariable Integer requestId) {
-        return service.view(requestId);
+    public ResponseEntity<?> viewRequest(
+            @PathVariable Integer requestId,
+            @RequestHeader(value = "X-Auth-Role", required = false) String role) {
+
+        if (role != null && !"ADMIN".equals(role)
+                && !"DEPARTMENT_HEAD".equals(role)
+                && !"DOCTOR".equals(role)
+                && !"NURSE".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied.");
+        }
+
+        return ResponseEntity.ok(service.view(requestId));
     }
-    
+
+    // GET ALL — ADMIN, DEPARTMENT_HEAD only
     @GetMapping
-    public List<DepartmentRequestResponseDto> getAllRequests() {
-        return service.getAllRequests();
+    public ResponseEntity<?> getAllRequests(
+            @RequestHeader("X-Auth-Role") String role) {
+
+        if (!"ADMIN".equals(role) && !"DEPARTMENT_HEAD".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied. Only ADMIN or DEPARTMENT_HEAD can view all requests.");
+        }
+
+        return ResponseEntity.ok(service.getAllRequests());
     }
 }

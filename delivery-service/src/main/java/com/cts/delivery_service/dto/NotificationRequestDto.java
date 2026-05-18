@@ -7,8 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeliveryCreateDto {
+public class NotificationRequestDto {
 
-    private Integer requestId;
-    private Integer quantity;
+    private Long userId;
+    private Long referenceId;
+    private String message;
+    private String category;
 }

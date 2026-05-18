@@ -54,12 +54,22 @@ public class AuthController {
             throw new UserNotActiveException("Account not yet activated by admin");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        // Pass userId to token so downstream services can use it
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                user.getRole().name(),
+                user.getId()
+        );
 
         auditLogService.log(user.getId(), "LOGIN_SUCCESS", "SESSION",
                 user.getEmail(), "Successful login");
         log.info("Login: userId={} role={}", user.getId(), user.getRole());
 
-        return ResponseEntity.ok(new LoginResponseDTO(token, user.getRole().name()));
+        return ResponseEntity.ok(new LoginResponseDTO(
+                user.getId(),
+                user.getRole().name(),
+                token,
+                user.getName()
+        ));
     }
 }

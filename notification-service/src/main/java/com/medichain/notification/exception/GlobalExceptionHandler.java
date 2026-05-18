@@ -1,5 +1,5 @@
 package com.medichain.notification.exception;
-
+ 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,25 +7,34 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+ 
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+ 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-
+ 
     @ExceptionHandler(NotificationNotFoundException.class)
     public ResponseEntity<?> handleNotFound(NotificationNotFoundException ex) {
         return error(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage());
     }
-
+    @ExceptionHandler(TaskNotFoundException.class)
+    public ResponseEntity<?> handleTaskNotFound(TaskNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "TASK_NOT_FOUND", ex.getMessage());
+    }
+ 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgument(IllegalArgumentException ex) {
+        return error(HttpStatus.BAD_REQUEST, "INVALID_ARGUMENT", ex.getMessage());
+    }
+ 
     @ExceptionHandler(InvalidCategoryException.class)
     public ResponseEntity<?> handleInvalidCategory(InvalidCategoryException ex) {
         return error(HttpStatus.BAD_REQUEST, "INVALID_CATEGORY", ex.getMessage());
     }
-
+ 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> fieldErrors = ex.getBindingResult()
@@ -42,13 +51,13 @@ public class GlobalExceptionHandler {
                 "errors",    fieldErrors
         ));
     }
-
+ 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
         log.error("Unhandled exception: {}", ex.getMessage(), ex);
         return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Something went wrong");
     }
-
+ 
     private ResponseEntity<?> error(HttpStatus status, String code, String message) {
         return ResponseEntity.status(status).body(Map.of(
                 "timestamp", LocalDateTime.now(),

@@ -8,12 +8,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeliveryResponseDto {
+public class ProofOfReceiptResponseDto {
 
+    private Integer proofId;
     private Integer deliveryId;
-    private Integer requestId;
-    private String deliveredBy;
-    private LocalDateTime deliveredAt;
-    private Integer quantity;
+    private Integer departmentId;
+    private LocalDateTime receivedAt;
+    private String fileUri;
     private String status;
 }
