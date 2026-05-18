@@ -5,6 +5,7 @@ import com.cts.medichain.entity.Warehouse;
 import com.cts.medichain.repository.InventoryRepository;
 import com.cts.medichain.repository.WarehouseRepository;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -19,11 +20,11 @@ public class InventoryService {
                             AuditLogService auditLogService) {
         this.inventoryRepository = inventoryRepository;
         this.warehouseRepository = warehouseRepository;
-        this.auditLogService = auditLogService;
+        this.auditLogService     = auditLogService;
     }
 
-    public InventoryItem createInventory(InventoryItem inventoryItem) {
 
+    public InventoryItem createInventory(InventoryItem inventoryItem) {
         if (inventoryItem.getQuantity() <= 0)
             throw new RuntimeException("Quantity must be greater than zero");
 
@@ -33,7 +34,6 @@ public class InventoryService {
 
         inventoryItem.setWarehouse(warehouse);
         inventoryItem.setStatus("AVAILABLE");
-
         InventoryItem saved = inventoryRepository.save(inventoryItem);
 
         auditLogService.logAction(
@@ -42,11 +42,15 @@ public class InventoryService {
                 "Inventory created for productId=" + saved.getProductId()
                 + ", warehouseId=" + warehouse.getWarehouseId()
                 + ", quantity=" + saved.getQuantity());
-
         return saved;
     }
 
     public List<InventoryItem> listInventory(Long warehouseId) {
         return inventoryRepository.findByWarehouse_WarehouseId(warehouseId);
+    }
+
+
+    public List<InventoryItem> getAllInventory() {
+        return inventoryRepository.findAll();
     }
 }

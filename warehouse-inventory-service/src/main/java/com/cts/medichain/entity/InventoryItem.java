@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Entity
 @Table(name = "inventory_items")
 @Data
@@ -17,8 +17,9 @@ public class InventoryItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long itemId;
 
-    @ManyToOne
+    @ManyToOne(fetch=FetchType.EAGER)
     @JoinColumn(name = "warehouse_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "inventoryItems"})
     private Warehouse warehouse;
 
     private Long productId;
